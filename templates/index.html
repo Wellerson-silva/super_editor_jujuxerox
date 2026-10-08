@@ -27,6 +27,14 @@
         <div class="zoom-indicator" id="zoomIndicator">Zoom: 100%</div>
     </div>
 
+    <!-- BOTÃO FLUTUANTE DE UPLOAD (Canto Direito) -->
+    <div class="floating-upload-container">
+        <label for="fileUploadInput" id="uploadButtonLabel" class="upload-btn">
+            Enviar arquivo
+        </label>
+        <input type="file" id="fileUploadInput" style="display: none;" />
+    </div>
+
     <script src="{{ url_for('static', filename='javascript.js') }}"></script>
 </body>
 </html>

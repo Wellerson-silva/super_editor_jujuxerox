@@ -1,7 +1,28 @@
-let currentZoom = 1; // 1 = 100%
+// ==================================================
+//                  CONSTANTES
+// ==================================================
+
 const zoomWrapper = document.getElementById('zoomWrapper');
 const zoomIndicator = document.getElementById('zoomIndicator');
 const canvasContainer = document.getElementById('canvasContainer');
+const a4Sheet = document.querySelector('.a4-sheet');
+const fileUploadInput = document.getElementById('fileUploadInput');
+const uploadButtonLabel = document.getElementById('uploadButtonLabel');
+
+// ==================================================
+// Variáveis para controlar o arraste da folha (Pan)
+// ==================================================
+
+let currentZoom = 1;
+let isDragging = false;
+let startX, startY;
+let sheetX = 0; // Posição X atual da folha
+let sheetY = 0; // Posição Y atual da folha
+
+// ======================================================
+//              CONTROLES DE ZOOM NA TELA
+// ======================================================
+
 
 // Controla o zoom com a roda do rato
 canvasContainer.addEventListener('wheel', function(e) {
@@ -28,3 +49,62 @@ canvasContainer.addEventListener('wheel', function(e) {
 }, { passive: false });
 
 console.log("Zoom ativado com sucesso!");
+
+// ===========================================
+//   LÓGICA DE ARRASTAR A FOLHA (PAN/DRAG)
+// ===========================================
+
+
+// Quando aperta o botão do mouse em cima da folha (ou do container)
+canvasContainer.addEventListener('mousedown', (e) => {
+    // Evita arrastar se clicar em elementos de texto internos da folha por engano
+    isDragging = true;
+    startX = e.clientX - sheetX;
+    startY = e.clientY - sheetY;
+    canvasContainer.style.cursor = 'grabbing';
+});
+
+// Quando move o mouse pela tela
+window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    
+    // Calcula a nova posição baseada no movimento do mouse
+    sheetX = e.clientX - startX;
+    sheetY = e.clientY - startY;
+
+    // Aplica a movimentação na folha A4
+    updateSheetPosition();
+});
+
+// Quando solta o botão do mouse
+window.addEventListener('mouseup', () => {
+    isDragging = false;
+    canvasContainer.style.cursor = 'default';
+});
+
+// Função para atualizar a posição visual da folha
+function updateSheetPosition() {
+    if (a4Sheet) {
+        a4Sheet.style.transform = `translate(${sheetX}px, ${sheetY}px)`;
+    }
+}
+
+// ==========================================
+//       LÓGICA DE UPLOAD DE ARQUIVO
+// ==========================================
+if (fileUploadInput) {
+    fileUploadInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            // Altera o texto para o sinal de mais (+)
+            uploadButtonLabel.innerText = '+';
+            
+            // Adiciona a classe que transforma o botão em um círculo perfeito
+            uploadButtonLabel.classList.add('is-circular');
+            
+            const fileName = e.target.files[0].name;
+            uploadButtonLabel.title = `Arquivo carregado: ${fileName}`;
+            
+            console.log("Arquivo carregado com sucesso:", fileName);
+        }
+    });
+}
