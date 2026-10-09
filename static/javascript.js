@@ -8,6 +8,7 @@ const canvasContainer = document.getElementById('canvasContainer');
 const a4Sheet = document.querySelector('.a4-sheet');
 const fileUploadInput = document.getElementById('fileUploadInput');
 const uploadButtonLabel = document.getElementById('uploadButtonLabel');
+const downloadButton = document.getElementById('downloadButton');
 
 // ==================================================
 // Variáveis para controlar o arraste da folha (Pan)
@@ -106,5 +107,15 @@ if (fileUploadInput) {
             
             console.log("Arquivo carregado com sucesso:", fileName);
         }
+    });
+}
+// ==========================================
+//       LÓGICA DE DOWNLOAD / EXPORTAÇÃO
+// ==========================================
+if (downloadButton) {
+    downloadButton.addEventListener('click', () => {
+        console.log("Botão de download acionado!");
+        // Aqui colocaremos futuramente a lógica para gerar a imagem ou PDF da folha A4
+        alert("Funcionalidade de download em desenvolvimento!");
     });
 }
