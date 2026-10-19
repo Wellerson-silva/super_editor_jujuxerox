@@ -14,7 +14,7 @@ const downloadButton = document.getElementById('downloadButton');
 // Variáveis para controlar o arraste da folha (Pan)
 // ==================================================
 
-let currentZoom = 1;
+let currentZoom = 0.4;
 let isDragging = false;
 let startX, startY;
 let sheetX = 0; // Posição X atual da folha
@@ -43,7 +43,7 @@ canvasContainer.addEventListener('wheel', function(e) {
     }
 
     // Aplica a transformação de escala
-    zoomWrapper.style.transform = `scale(${currentZoom})`;
+    zoomWrapper.style.zoom = currentZoom;
     
     // Atualiza o texto indicador
     zoomIndicator.innerText = `Zoom: ${Math.round(currentZoom * 100)}%`;
@@ -51,64 +51,85 @@ canvasContainer.addEventListener('wheel', function(e) {
 
 console.log("Zoom ativado com sucesso!");
 
-// ===========================================
-//   LÓGICA DE ARRASTAR A FOLHA (PAN/DRAG)
-// ===========================================
-
-
-// Quando aperta o botão do mouse em cima da folha (ou do container)
-canvasContainer.addEventListener('mousedown', (e) => {
-    // Evita arrastar se clicar em elementos de texto internos da folha por engano
-    isDragging = true;
-    startX = e.clientX - sheetX;
-    startY = e.clientY - sheetY;
-    canvasContainer.style.cursor = 'grabbing';
-});
-
-// Quando move o mouse pela tela
-window.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    
-    // Calcula a nova posição baseada no movimento do mouse
-    sheetX = e.clientX - startX;
-    sheetY = e.clientY - startY;
-
-    // Aplica a movimentação na folha A4
-    updateSheetPosition();
-});
-
-// Quando solta o botão do mouse
-window.addEventListener('mouseup', () => {
-    isDragging = false;
-    canvasContainer.style.cursor = 'default';
-});
-
-// Função para atualizar a posição visual da folha
-function updateSheetPosition() {
-    if (a4Sheet) {
-        a4Sheet.style.transform = `translate(${sheetX}px, ${sheetY}px)`;
-    }
-}
 
 // ==========================================
-//       LÓGICA DE UPLOAD DE ARQUIVO
+//          LÓGICA DE UPLOAD DE ARQUIVO
 // ==========================================
 if (fileUploadInput) {
+    // Permitir selecionar múltiplos arquivos de uma vez
+    fileUploadInput.setAttribute('multiple', 'true');
+
     fileUploadInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            // Altera o texto para o sinal de mais (+)
-            uploadButtonLabel.innerText = '+';
+        const files = e.target.files;
+        if (files.length > 0) {
+            const zoomWrapper = document.getElementById('zoomWrapper');
             
-            // Adiciona a classe que transforma o botão em um círculo perfeito
-            uploadButtonLabel.classList.add('is-circular');
-            
-            const fileName = e.target.files[0].name;
-            uploadButtonLabel.title = `Arquivo carregado: ${fileName}`;
-            
-            console.log("Arquivo carregado com sucesso:", fileName);
+            // Verifica se a primeira página ainda está vazia (com o texto padrão)
+            let firstSheet = zoomWrapper.querySelector('.a4-sheet');
+            let isFirstSheetEmpty = firstSheet && firstSheet.querySelector('.sheet-label');
+
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        let targetSheet;
+
+                        // Se for o primeiro arquivo e a primeira folha estiver vazia, usa ela. Senão, cria uma nova folha!
+                        if (index === 0 && isFirstSheetEmpty) {
+                            targetSheet = firstSheet;
+                            targetSheet.innerHTML = ''; // Limpa o rótulo
+                        } else {
+                            targetSheet = document.createElement('div');
+                            targetSheet.className = 'a4-sheet';
+                            zoomWrapper.appendChild(targetSheet);
+                        }
+
+                        // Cria e insere a imagem na folha correspondente
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.alt = file.name;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        img.style.display = 'block';
+
+                        targetSheet.appendChild(img);
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            console.log(`${files.length} arquivo(s) processado(s) com sucesso.`);
         }
     });
 }
+
+// ==========================================
+//      LÓGICA DO BOTÃO ADICIONAR PÁGINA
+// ==========================================
+const addPageBtn = document.getElementById('addPageBtn');
+if (addPageBtn) {
+    addPageBtn.addEventListener('click', () => {
+        const zoomWrapper = document.getElementById('zoomWrapper');
+        if (zoomWrapper) {
+            const newSheet = document.createElement('div');
+            newSheet.className = 'a4-sheet';
+            
+            const label = document.createElement('span');
+            label.className = 'sheet-label';
+            label.innerText = `Jujuxerox | A4 (${zoomWrapper.children.length + 1})`;
+            newSheet.appendChild(label);
+
+            zoomWrapper.appendChild(newSheet);
+            
+            // Rola a tela suavemente para a nova página
+            newSheet.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+}
+
 // ==========================================
 //       LÓGICA DE DOWNLOAD / EXPORTAÇÃO
 // ==========================================
