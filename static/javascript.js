@@ -9,6 +9,7 @@ const a4Sheet = document.querySelector('.a4-sheet');
 const fileUploadInput = document.getElementById('fileUploadInput');
 const uploadButtonLabel = document.getElementById('uploadButtonLabel');
 const downloadButton = document.getElementById('downloadButton');
+const addPageBtn = document.getElementById('addPageBtn');
 
 // ==================================================
 // Variáveis para controlar o arraste da folha (Pan)
@@ -62,7 +63,6 @@ if (fileUploadInput) {
     fileUploadInput.addEventListener('change', (e) => {
         const files = e.target.files;
         if (files.length > 0) {
-            const zoomWrapper = document.getElementById('zoomWrapper');
             
             // Verifica se a primeira página ainda está vazia (com o texto padrão)
             let firstSheet = zoomWrapper.querySelector('.a4-sheet');
@@ -84,6 +84,8 @@ if (fileUploadInput) {
                             targetSheet.className = 'a4-sheet';
                             zoomWrapper.appendChild(targetSheet);
                         }
+                        // Botão de excluir página
+                        addDeleteButtonToSheet(targetSheet);
 
                         // Cria e insere a imagem na folha correspondente
                         const img = document.createElement('img');
@@ -109,13 +111,16 @@ if (fileUploadInput) {
 // ==========================================
 //      LÓGICA DO BOTÃO ADICIONAR PÁGINA
 // ==========================================
-const addPageBtn = document.getElementById('addPageBtn');
+
 if (addPageBtn) {
     addPageBtn.addEventListener('click', () => {
         const zoomWrapper = document.getElementById('zoomWrapper');
         if (zoomWrapper) {
             const newSheet = document.createElement('div');
             newSheet.className = 'a4-sheet';
+
+            // botão de excluir página
+            addDeleteButtonToSheet(newSheet);
             
             const label = document.createElement('span');
             label.className = 'sheet-label';
@@ -127,7 +132,10 @@ if (addPageBtn) {
             // Rola a tela suavemente para a nova página
             newSheet.scrollIntoView({ behavior: 'smooth' });
         }
+        
     });
+
+    
 }
 
 // ==========================================
@@ -139,4 +147,47 @@ if (downloadButton) {
         // Aqui colocaremos futuramente a lógica para gerar a imagem ou PDF da folha A4
         alert("Funcionalidade de download em desenvolvimento!");
     });
+}
+
+// ==========================================
+//     LÓGICA DO BOTÃO DE EXCLUIR PÁGINA
+// ==========================================
+
+// Função para adicionar o botão de excluir a qualquer folha A4
+function addDeleteButtonToSheet(sheet) {
+    // Evita criar múltiplos botões de excluir na mesma folha
+    if (sheet.querySelector('.delete-page-btn')) return;
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-page-btn';
+    deleteBtn.title = 'Excluir página';
+    deleteBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+    `;
+
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita interferir em outros cliques na folha
+        const totalSheets = zoomWrapper.querySelectorAll('.a4-sheet').length;
+        
+        if (totalSheets > 1) {
+            sheet.remove();
+        } else {
+            alert("Você não pode excluir a única página restante!");
+        }
+    });
+
+    sheet.appendChild(deleteBtn);
+}
+
+// ===========================================
+//  LÓGICA DO BOTÃO DE EXCLUIR PÁGINA INICIAL 
+// ===========================================
+
+// Adiciona o botão de excluir na folha inicial já existente na tela
+const initialSheet = document.querySelector('.a4-sheet');
+if (initialSheet) {
+    addDeleteButtonToSheet(initialSheet);
 }

@@ -144,6 +144,41 @@ body {
     transform: scale(0.96);
 }
 
+/* ===================================== */
+/*      BOTÃO DE EXCLUSÃO DE PÁGINA      */
+/* ===================================== */
+
+
+/* Botão de excluir página */
+.delete-page-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #9333ea;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0; /* Fica invisível por padrão e aparece ao passar o mouse na folha */
+    transition: all 0.2s ease;
+    z-index: 20;
+}
+
+/* Mostra o botão quando o utilizador passa o rato em cima da folha A4 */
+.a4-sheet:hover .delete-page-btn {
+    opacity: 1;
+}
+
+.delete-page-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+    transform: scale(1.05);
+}
 
 /* =========================================== */
 /*           BOTÃO FLUTUANTE DE UPLOAD         */
@@ -237,16 +272,16 @@ body {
 
 /* Estilização da Barra Lateral Esquerda */
 .sidebar-left {
-    width: 80px; /* Reduzimos de 140px para 80px para ficar bem compacta e elegante */
+    width: 80px;
     height: calc(100vh - 40px);
-    background: linear-gradient(135deg, #d8b4fe, #c084fc); /* Lilás bem mais claro e suave */
+    background: linear-gradient(135deg, #d8b4fe, #c084fc);
     border-radius: 16px;
     box-shadow: 0 8px 24px rgba(147, 51, 234, 0.2);
     margin: 20px 0 20px 20px;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centraliza perfeitamente os itens horizontalmente */
-    padding: 20px 10px; /* Ajuste nas margens internas */
+    align-items: center;        /* Centraliza horizontalmente */
+    padding: 20px 0;            /* Ajusta o padding vertical */
     box-sizing: border-box;
     z-index: 10;
 }
@@ -256,25 +291,24 @@ body {
 .sidebar-tools {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 15px; /* Espaçamento entre os botões */
-    padding: 20px 0;
+    align-items: center;        /* Garante que cada ícone fique centralizado no eixo */
+    gap: 12px;                  /* Espaçamento uniforme entre os botões */
+    width: 100%;
 }
 
-/* Estilo do Botão da Ferramenta (Circular Branco com símbolo lilás) */
+/* Estilo padrão para os botões de ferramentas */
 .tool-btn {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%; /* Torna o botão um círculo perfeito */
-    background: #ffffff; /* Fundo branco */
-    border: none;
     display: flex;
-    align-items: center;
     justify-content: center;
-    color: #9333ea; /* Símbolo/ícone na cor lilás */
+    align-items: center;
+    width: 48px;
+    height: 48px;
+    border: none;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave para dar destaque */
     transition: all 0.2s ease;
+    color: #4b0082;
 }
 
 /* Efeito ao passar o mouse por cima do botão (Hover) */
@@ -284,6 +318,7 @@ body {
     transform: scale(1.08); /* Dá um leve zoom elegante */
     box-shadow: 0 6px 15px rgba(147, 51, 234, 0.3);
 }
+
 
 /* Efeito ao clicar no botão */
 .tool-btn:active {
