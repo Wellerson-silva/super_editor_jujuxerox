@@ -10,9 +10,11 @@ const fileUploadInput = document.getElementById('fileUploadInput');
 const uploadButtonLabel = document.getElementById('uploadButtonLabel');
 const downloadButton = document.getElementById('downloadButton');
 const addPageBtn = document.getElementById('addPageBtn');
+const resizeBtn = document.getElementById('resizeBtn');
+const cropBtn = document.getElementById('cropBtn');
 
 // ==================================================
-// Variáveis para controlar o arraste da folha (Pan)
+//                 VARIÁVEIS GLOBAIS
 // ==================================================
 
 let currentZoom = 0.4;
@@ -20,6 +22,42 @@ let isDragging = false;
 let startX, startY;
 let sheetX = 0; // Posição X atual da folha
 let sheetY = 0; // Posição Y atual da folha
+let activeTool = null;   // Estado da ferramenta ativa atual
+
+
+// Seleciona todos os botões da barra lateral esquerda
+// Captura direta do botão de redimensionar pelo ID
+
+// Todos os botões com a classe .tool-btn
+const toolBtns = document.querySelectorAll('.tool-btn');
+
+toolBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Se clicar no botão que já estava ativo, desativa ele
+        if (btn.classList.contains('active-tool')) {
+            btn.classList.remove('active-tool');
+            activeTool = null;
+            return;
+        }
+
+        // Remove o destaque de todos os botões e destaca apenas o clicado
+        toolBtns.forEach(b => b.classList.remove('active-tool'));
+        btn.classList.add('active-tool');
+
+        // Define a ferramenta ativa baseada no ID do botão
+        if (btn.id === 'resizeBtn') {
+            activeTool = 'resize';
+        } else {
+            activeTool = null;
+        }
+    });
+});
+
+// ======================================================
+//                  CONTROLE DOS BOTÕES
+// ======================================================
+
+
 
 // ======================================================
 //              CONTROLES DE ZOOM NA TELA
@@ -97,6 +135,9 @@ if (fileUploadInput) {
                         img.style.display = 'block';
 
                         targetSheet.appendChild(img);
+
+                        // Ativa a interatividade de mover e redimensionar livremente
+                        makeImageInteractive(img);
                     };
 
                     reader.readAsDataURL(file);
@@ -190,4 +231,113 @@ function addDeleteButtonToSheet(sheet) {
 const initialSheet = document.querySelector('.a4-sheet');
 if (initialSheet) {
     addDeleteButtonToSheet(initialSheet);
+}
+
+// ===========================================
+//      LÓGICA DO BOTÃO REDIMENSIONAR
+// ===========================================
+
+function makeImageInteractive(img) {
+    const container = document.createElement('div');
+    container.className = 'image-container-wrapper';
+    container.style.position = 'absolute';
+    container.style.left = '20px';
+    container.style.top = '20px';
+    container.style.display = 'inline-block';
+    
+    img.parentNode.insertBefore(container, img);
+    container.appendChild(img);
+
+    img.style.width = '200px';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+    img.style.cursor = 'move';
+
+    const handles = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    const handleElements = {};
+
+    handles.forEach(pos => {
+        let handle = document.createElement('div');
+        handle.className = `resize-handle ${pos}`;
+        container.appendChild(handle);
+        handleElements[pos] = handle;
+    });
+
+    function toggleHandles(show) {
+        handles.forEach(pos => {
+            if (show) {
+                handleElements[pos].classList.add('active');
+            } else {
+                handleElements[pos].classList.remove('active');
+            }
+        });
+    }
+
+    let isDragging = false;
+    let isResizing = false;
+    let currentHandle = null;
+    let startX, startY, startLeft, startTop, startWidth;
+
+    container.addEventListener('mousedown', (e) => {
+        // Só permite mexer se a ferramenta de redimensionar estiver ativa
+        if (activeTool !== 'resize') return;
+
+        e.stopPropagation();
+        container.classList.add('selected');
+        toggleHandles(true);
+
+        if (e.target.classList.contains('resize-handle')) {
+            isResizing = true;
+            currentHandle = e.target;
+        } else {
+            isDragging = true;
+        }
+
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = container.offsetLeft;
+        startTop = container.offsetTop;
+        startWidth = img.offsetWidth;
+    });
+
+    document.addEventListener('mousedown', (e) => {
+        if (!container.contains(e.target)) {
+            container.classList.remove('selected');
+            toggleHandles(false);
+        }
+    });
+
+    // Movimento global na janela
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging && !isResizing) return;
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        if (isDragging) {
+            container.style.left = `${startLeft + dx}px`;
+            container.style.top = `${startTop + dy}px`;
+        } else if (isResizing) {
+            if (currentHandle.classList.contains('bottom-right')) {
+                img.style.width = `${Math.max(50, startWidth + dx)}px`;
+            } else if (currentHandle.classList.contains('bottom-left')) {
+                img.style.width = `${Math.max(50, startWidth - dx)}px`;
+                container.style.left = `${startLeft + dx}px`;
+            } else if (currentHandle.classList.contains('top-right')) {
+                img.style.width = `${Math.max(50, startWidth + dx)}px`;
+                container.style.top = `${startTop + dy}px`;
+            } else if (currentHandle.classList.contains('top-left')) {
+                img.style.width = `${Math.max(50, startWidth - dx)}px`;
+                container.style.left = `${startLeft + dx}px`;
+                container.style.top = `${startTop + dy}px`;
+            }
+        }
+    });
+
+    // Garante que soltar o mouse em qualquer lugar do navegador encerra o movimento
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        isResizing = false;
+        currentHandle = null;
+    });
 }

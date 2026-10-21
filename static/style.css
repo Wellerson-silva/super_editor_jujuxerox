@@ -326,3 +326,40 @@ body {
 }
 
 /* ================================================= */
+/*         ESTILO DA FERRAMENTA REDIMENSIONAR        */
+/* ================================================= */
+
+.image-container-wrapper {
+    position: absolute;
+    box-sizing: border-box;
+}
+
+.image-container-wrapper.selected {
+    outline: 2px dashed #9333ea;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border: 2px solid #9333ea;
+    border-radius: 50%;
+    z-index: 30;
+    display: none;
+}
+
+.resize-handle.top-left { top: -6px; left: -6px; cursor: nwse-resize; }
+.resize-handle.top-right { top: -6px; right: -6px; cursor: nesw-resize; }
+.resize-handle.bottom-left { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.resize-handle.bottom-right { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.resize-handle.active {
+    display: block;
+}
+
+.tool-btn.active-tool {
+    background: #9333ea !important;
+    color: #ffffff !important;
+}
+/* ================================================= */
