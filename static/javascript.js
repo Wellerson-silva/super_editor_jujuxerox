@@ -1,5 +1,5 @@
 // ==================================================
-//                  CONSTANTES
+//                   CONSTANTES
 // ==================================================
 
 const zoomWrapper = document.getElementById('zoomWrapper');
@@ -12,24 +12,20 @@ const downloadButton = document.getElementById('downloadButton');
 const addPageBtn = document.getElementById('addPageBtn');
 const resizeBtn = document.getElementById('resizeBtn');
 const cropBtn = document.getElementById('cropBtn');
+const toolBtns = document.querySelectorAll('.tool-btn');
 
 // ==================================================
 //                 VARIÁVEIS GLOBAIS
 // ==================================================
 
 let currentZoom = 0.4;
-let isDragging = false;
-let startX, startY;
 let sheetX = 0; // Posição X atual da folha
 let sheetY = 0; // Posição Y atual da folha
 let activeTool = null;   // Estado da ferramenta ativa atual
 
-
-// Seleciona todos os botões da barra lateral esquerda
-// Captura direta do botão de redimensionar pelo ID
-
-// Todos os botões com a classe .tool-btn
-const toolBtns = document.querySelectorAll('.tool-btn');
+// ======================================================
+//                  CONTROLE DOS BOTÕES
+// ======================================================
 
 toolBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -37,6 +33,10 @@ toolBtns.forEach(btn => {
         if (btn.classList.contains('active-tool')) {
             btn.classList.remove('active-tool');
             activeTool = null;
+            
+            // Limpa caixas de corte ativas
+            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
             return;
         }
 
@@ -47,62 +47,73 @@ toolBtns.forEach(btn => {
         // Define a ferramenta ativa baseada no ID do botão
         if (btn.id === 'resizeBtn') {
             activeTool = 'resize';
+            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
+        } else if (btn.id === 'cropBtn') {
+            activeTool = 'crop';
+                        // Seleção automática: Abre a caixa de corte cobrindo a imagem inteira
+                    document.querySelectorAll('.image-container-wrapper').forEach(container => {
+                    const img = container.querySelector('img');
+                    const cropBox = container.querySelector('.crop-box');
+                    const cropConfirmBtn = container.querySelector('.crop-confirm-btn');
+
+                    if (img && cropBox && cropConfirmBtn) {
+                        const width = img.offsetWidth;
+                        const height = img.offsetHeight;
+
+                        cropBox.style.left = '0px';
+                        cropBox.style.top = '0px';
+                        cropBox.style.width = `${width}px`;
+                        cropBox.style.height = `${height}px`;
+                        cropBox.classList.add('active');
+
+                        cropConfirmBtn.style.left = `${width + 8}px`;
+                        cropConfirmBtn.style.top = '0px';
+                        cropConfirmBtn.classList.add('active');
+                    }
+                });
+            
         } else {
             activeTool = null;
+            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
         }
     });
 });
 
 // ======================================================
-//                  CONTROLE DOS BOTÕES
+//               CONTROLES DE ZOOM NA TELA
 // ======================================================
 
+if (canvasContainer) {
+    canvasContainer.addEventListener('wheel', function(e) {
+        e.preventDefault();
 
+        const zoomStep = 0.1;
+        if (e.deltaY < 0) {
+            currentZoom += zoomStep;
+            if (currentZoom > 3.0) currentZoom = 3.0;
+        } else {
+            currentZoom -= zoomStep;
+            if (currentZoom < 0.4) currentZoom = 0.4;
+        }
 
-// ======================================================
-//              CONTROLES DE ZOOM NA TELA
-// ======================================================
-
-
-// Controla o zoom com a roda do rato
-canvasContainer.addEventListener('wheel', function(e) {
-    // Verifica se o utilizador está a usar o zoom (Ctrl + Scroll ou apenas scroll dependendo da preferência)
-    // Aqui vamos permitir o zoom direto com o scroll do rato para ficar bem fluido:
-    e.preventDefault();
-
-    const zoomStep = 0.1;
-    if (e.deltaY < 0) {
-        // Zoom In (Aproximar)
-        currentZoom += zoomStep;
-        if (currentZoom > 3.0) currentZoom = 3.0; // Limite máximo de 300%
-    } else {
-        // Zoom Out (Afastar)
-        currentZoom -= zoomStep;
-        if (currentZoom < 0.4) currentZoom = 0.4; // Limite mínimo de 40%
-    }
-
-    // Aplica a transformação de escala
-    zoomWrapper.style.zoom = currentZoom;
-    
-    // Atualiza o texto indicador
-    zoomIndicator.innerText = `Zoom: ${Math.round(currentZoom * 100)}%`;
-}, { passive: false });
-
-console.log("Zoom ativado com sucesso!");
-
+        zoomWrapper.style.zoom = currentZoom;
+        if (zoomIndicator) {
+            zoomIndicator.innerText = `Zoom: ${Math.round(currentZoom * 100)}%`;
+        }
+    }, { passive: false });
+}
 
 // ==========================================
 //          LÓGICA DE UPLOAD DE ARQUIVO
 // ==========================================
 if (fileUploadInput) {
-    // Permitir selecionar múltiplos arquivos de uma vez
     fileUploadInput.setAttribute('multiple', 'true');
 
     fileUploadInput.addEventListener('change', (e) => {
         const files = e.target.files;
         if (files.length > 0) {
-            
-            // Verifica se a primeira página ainda está vazia (com o texto padrão)
             let firstSheet = zoomWrapper.querySelector('.a4-sheet');
             let isFirstSheetEmpty = firstSheet && firstSheet.querySelector('.sheet-label');
 
@@ -113,19 +124,17 @@ if (fileUploadInput) {
                     reader.onload = function(event) {
                         let targetSheet;
 
-                        // Se for o primeiro arquivo e a primeira folha estiver vazia, usa ela. Senão, cria uma nova folha!
                         if (index === 0 && isFirstSheetEmpty) {
                             targetSheet = firstSheet;
-                            targetSheet.innerHTML = ''; // Limpa o rótulo
+                            targetSheet.innerHTML = '';
                         } else {
                             targetSheet = document.createElement('div');
                             targetSheet.className = 'a4-sheet';
                             zoomWrapper.appendChild(targetSheet);
                         }
-                        // Botão de excluir página
+                        
                         addDeleteButtonToSheet(targetSheet);
 
-                        // Cria e insere a imagem na folha correspondente
                         const img = document.createElement('img');
                         img.src = event.target.result;
                         img.alt = file.name;
@@ -136,15 +145,12 @@ if (fileUploadInput) {
 
                         targetSheet.appendChild(img);
 
-                        // Ativa a interatividade de mover e redimensionar livremente
                         makeImageInteractive(img);
                     };
 
                     reader.readAsDataURL(file);
                 }
             });
-
-            console.log(`${files.length} arquivo(s) processado(s) com sucesso.`);
         }
     });
 }
@@ -155,12 +161,10 @@ if (fileUploadInput) {
 
 if (addPageBtn) {
     addPageBtn.addEventListener('click', () => {
-        const zoomWrapper = document.getElementById('zoomWrapper');
         if (zoomWrapper) {
             const newSheet = document.createElement('div');
             newSheet.className = 'a4-sheet';
 
-            // botão de excluir página
             addDeleteButtonToSheet(newSheet);
             
             const label = document.createElement('span');
@@ -169,14 +173,9 @@ if (addPageBtn) {
             newSheet.appendChild(label);
 
             zoomWrapper.appendChild(newSheet);
-            
-            // Rola a tela suavemente para a nova página
             newSheet.scrollIntoView({ behavior: 'smooth' });
         }
-        
     });
-
-    
 }
 
 // ==========================================
@@ -184,8 +183,6 @@ if (addPageBtn) {
 // ==========================================
 if (downloadButton) {
     downloadButton.addEventListener('click', () => {
-        console.log("Botão de download acionado!");
-        // Aqui colocaremos futuramente a lógica para gerar a imagem ou PDF da folha A4
         alert("Funcionalidade de download em desenvolvimento!");
     });
 }
@@ -194,9 +191,7 @@ if (downloadButton) {
 //     LÓGICA DO BOTÃO DE EXCLUIR PÁGINA
 // ==========================================
 
-// Função para adicionar o botão de excluir a qualquer folha A4
 function addDeleteButtonToSheet(sheet) {
-    // Evita criar múltiplos botões de excluir na mesma folha
     if (sheet.querySelector('.delete-page-btn')) return;
 
     const deleteBtn = document.createElement('button');
@@ -210,7 +205,7 @@ function addDeleteButtonToSheet(sheet) {
     `;
 
     deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Evita interferir em outros cliques na folha
+        e.stopPropagation();
         const totalSheets = zoomWrapper.querySelectorAll('.a4-sheet').length;
         
         if (totalSheets > 1) {
@@ -223,18 +218,13 @@ function addDeleteButtonToSheet(sheet) {
     sheet.appendChild(deleteBtn);
 }
 
-// ===========================================
-//  LÓGICA DO BOTÃO DE EXCLUIR PÁGINA INICIAL 
-// ===========================================
-
-// Adiciona o botão de excluir na folha inicial já existente na tela
 const initialSheet = document.querySelector('.a4-sheet');
 if (initialSheet) {
     addDeleteButtonToSheet(initialSheet);
 }
 
 // ===========================================
-//      LÓGICA DO BOTÃO REDIMENSIONAR
+//       GERENCIADOR INTERATIVO DA IMAGEM
 // ===========================================
 
 function makeImageInteractive(img) {
@@ -252,7 +242,9 @@ function makeImageInteractive(img) {
     img.style.height = 'auto';
     img.style.display = 'block';
     img.style.cursor = 'move';
+    img.draggable = false; // Desativa o arraste nativo do navegador
 
+    // Alças de redimensionamento da imagem
     const handles = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
     const handleElements = {};
 
@@ -273,51 +265,100 @@ function makeImageInteractive(img) {
         });
     }
 
+    // Caixa de Corte, Alças laterais e Botão de Confirmação
+    const cropBox = document.createElement('div');
+    cropBox.className = 'crop-box';
+    container.appendChild(cropBox);
+
+    ['top', 'bottom', 'left', 'right'].forEach(pos => {
+        const cropHandle = document.createElement('div');
+        cropHandle.className = `crop-handle ${pos}`;
+        cropBox.appendChild(cropHandle);
+    });
+
+    const cropConfirmBtn = document.createElement('button');
+    cropConfirmBtn.className = 'crop-confirm-btn';
+    cropConfirmBtn.innerHTML = '✔';
+    cropConfirmBtn.title = 'Confirmar Corte';
+    container.appendChild(cropConfirmBtn);
+
     let isDragging = false;
     let isResizing = false;
+    let isCropping = false;
+    let isAdjustingCrop = false;
+    let currentCropHandle = null;
     let currentHandle = null;
-    let startX, startY, startLeft, startTop, startWidth;
+    let startX = 0, startY = 0, startLeft = 0, startTop = 0, startWidth = 0;
+    let cropStartX = 0, cropStartY = 0;
+    let initialCropBox = {};
 
     container.addEventListener('mousedown', (e) => {
-        // Só permite mexer se a ferramenta de redimensionar estiver ativa
-        if (activeTool !== 'resize') return;
+        if (activeTool !== 'resize' && activeTool !== 'crop') return;
+        if (e.target === cropConfirmBtn || cropConfirmBtn.contains(e.target)) return;
 
         e.stopPropagation();
-        container.classList.add('selected');
-        toggleHandles(true);
 
-        if (e.target.classList.contains('resize-handle')) {
-            isResizing = true;
-            currentHandle = e.target;
-        } else {
-            isDragging = true;
+        // Se a ferramenta ativa for REDIMENSIONAR
+        if (activeTool === 'resize') {
+            container.classList.add('selected');
+            toggleHandles(true);
+
+            if (e.target.classList.contains('resize-handle')) {
+                isResizing = true;
+                currentHandle = e.target;
+            } else {
+                isDragging = true;
+            }
+
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = container.offsetLeft;
+            startTop = container.offsetTop;
+            startWidth = img.offsetWidth;
+        } 
+        // Se a ferramenta ativa for CORTE (CROP)
+        else if (activeTool === 'crop') {
+            startX = e.clientX;
+            startY = e.clientY;
+
+            if (e.target.classList.contains('crop-handle')) {
+                isAdjustingCrop = true;
+                currentCropHandle = e.target;
+                initialCropBox = {
+                    left: parseInt(cropBox.style.left) || 0,
+                    top: parseInt(cropBox.style.top) || 0,
+                    width: parseInt(cropBox.style.width) || 0,
+                    height: parseInt(cropBox.style.height) || 0
+                };
+            } else {
+                // Se clicar dentro da caixa de corte ou imagem, permite redesenhar o crop
+                isCropping = true;
+                cropConfirmBtn.classList.remove('active');
+
+                const rect = container.getBoundingClientRect();
+                cropStartX = e.clientX - rect.left;
+                cropStartY = e.clientY - rect.top;
+
+                cropBox.style.left = `${cropStartX}px`;
+                cropBox.style.top = `${cropStartY}px`;
+                cropBox.style.width = '0px';
+                cropBox.style.height = '0px';
+                cropBox.classList.add('active');
+            }
         }
-
-        startX = e.clientX;
-        startY = e.clientY;
-        startLeft = container.offsetLeft;
-        startTop = container.offsetTop;
-        startWidth = img.offsetWidth;
     });
 
-    document.addEventListener('mousedown', (e) => {
-        if (!container.contains(e.target)) {
-            container.classList.remove('selected');
-            toggleHandles(false);
-        }
-    });
-
-    // Movimento global na janela
     window.addEventListener('mousemove', (e) => {
-        if (!isDragging && !isResizing) return;
+        if (!isDragging && !isResizing && !isCropping && !isAdjustingCrop) return;
 
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
 
-        if (isDragging) {
+        if (isDragging && activeTool === 'resize') {
             container.style.left = `${startLeft + dx}px`;
             container.style.top = `${startTop + dy}px`;
-        } else if (isResizing) {
+        } 
+        else if (isResizing && activeTool === 'resize') {
             if (currentHandle.classList.contains('bottom-right')) {
                 img.style.width = `${Math.max(50, startWidth + dx)}px`;
             } else if (currentHandle.classList.contains('bottom-left')) {
@@ -331,13 +372,107 @@ function makeImageInteractive(img) {
                 container.style.left = `${startLeft + dx}px`;
                 container.style.top = `${startTop + dy}px`;
             }
+        } 
+        else if (isCropping && activeTool === 'crop') {
+            const rect = container.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+
+            let width = currentX - cropStartX;
+            let height = currentY - cropStartY;
+            let left = cropStartX;
+            let top = cropStartY;
+
+            if (width < 0) { left = currentX; width = Math.abs(width); }
+            if (height < 0) { top = currentY; height = Math.abs(height); }
+
+            cropBox.style.left = `${left}px`;
+            cropBox.style.top = `${top}px`;
+            cropBox.style.width = `${width}px`;
+            cropBox.style.height = `${height}px`;
+        }
+        else if (isAdjustingCrop && activeTool === 'crop') {
+            let { left, top, width, height } = initialCropBox;
+
+            if (currentCropHandle.classList.contains('right')) {
+                cropBox.style.width = `${Math.max(20, width + dx)}px`;
+            } else if (currentCropHandle.classList.contains('left')) {
+                const newWidth = width - dx;
+                if (newWidth > 20) {
+                    cropBox.style.left = `${left + dx}px`;
+                    cropBox.style.width = `${newWidth}px`;
+                }
+            } else if (currentCropHandle.classList.contains('bottom')) {
+                cropBox.style.height = `${Math.max(20, height + dy)}px`;
+            } else if (currentCropHandle.classList.contains('top')) {
+                const newHeight = height - dy;
+                if (newHeight > 20) {
+                    cropBox.style.top = `${top + dy}px`;
+                    cropBox.style.height = `${newHeight}px`;
+                }
+            }
         }
     });
 
-    // Garante que soltar o mouse em qualquer lugar do navegador encerra o movimento
     window.addEventListener('mouseup', () => {
+        if (isCropping || isAdjustingCrop) {
+            isCropping = false;
+            isAdjustingCrop = false;
+            currentCropHandle = null;
+
+            const boxWidth = parseInt(cropBox.style.width) || 0;
+            const boxHeight = parseInt(cropBox.style.height) || 0;
+            
+            if (boxWidth > 15 && boxHeight > 15) {
+                const boxLeft = parseInt(cropBox.style.left) || 0;
+                const boxTop = parseInt(cropBox.style.top) || 0;
+                
+                cropConfirmBtn.style.left = `${boxLeft + boxWidth + 8}px`;
+                cropConfirmBtn.style.top = `${boxTop}px`;
+                cropConfirmBtn.classList.add('active');
+            }
+        }
+
         isDragging = false;
         isResizing = false;
         currentHandle = null;
+    });
+
+    // Efetivar o corte ao clicar no botão ✔
+    cropConfirmBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const cropX = parseInt(cropBox.style.left) || 0;
+        const cropY = parseInt(cropBox.style.top) || 0;
+        const cropW = parseInt(cropBox.style.width) || 0;
+        const cropH = parseInt(cropBox.style.height) || 0;
+
+        if (cropW <= 0 || cropH <= 0) return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = cropW;
+        canvas.height = cropH;
+
+        const scaleX = img.naturalWidth / img.offsetWidth;
+        const scaleY = img.naturalHeight / img.offsetHeight;
+
+        ctx.drawImage(
+            img,
+            cropX * scaleX, cropY * scaleY, cropW * scaleX, cropH * scaleY,
+            0, 0, cropW, cropH
+        );
+
+        img.src = canvas.toDataURL('image/png');
+        img.style.width = `${cropW}px`;
+        img.style.height = `${cropH}px`;
+
+        cropBox.classList.remove('active');
+        cropConfirmBtn.classList.remove('active');
+        
+        activeTool = null;
+        toolBtns.forEach(b => b.classList.remove('active-tool'));
     });
 }

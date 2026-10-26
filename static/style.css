@@ -362,4 +362,70 @@ body {
     background: #9333ea !important;
     color: #ffffff !important;
 }
+
+/* ===========================================
+   ESTILOS DA FERRAMENTA DE CORTE (CROP)
+   =========================================== */
+
+.crop-box {
+    position: absolute;
+    border: 2px dashed #ffffff;
+    background-color: rgba(147, 51, 234, 0.15);
+    z-index: 40;
+    display: none;
+}
+
+.crop-box.active {
+    display: block;
+}
+
+/* Alças nas laterais e cantos da caixa de corte para ajustar o crop */
+.crop-handle {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #9333ea;
+    width: 8px;
+    height: 8px;
+    z-index: 45;
+}
+
+.crop-handle.top { top: -4px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.crop-handle.bottom { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.crop-handle.left { left: -4px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+.crop-handle.right { right: -4px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+
+/* Botão de confirmação do corte */
+.crop-confirm-btn {
+    position: absolute;
+    background-color: #9333ea;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+
+}
+
+.crop-confirm-btn.active {
+    display: flex;
+}
+/* ============================================================= */
+/* Evita a seleção azul incômoda e o arrasto nativo da imagem */
+/* ============================================================= */
+.image-container-wrapper {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.image-container-wrapper img {
+    -webkit-user-drag: none;
+    user-select: none;
+}
 /* ================================================= */
