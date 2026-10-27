@@ -51,28 +51,31 @@ toolBtns.forEach(btn => {
             document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
         } else if (btn.id === 'cropBtn') {
             activeTool = 'crop';
-                        // Seleção automática: Abre a caixa de corte cobrindo a imagem inteira
-                    document.querySelectorAll('.image-container-wrapper').forEach(container => {
-                    const img = container.querySelector('img');
-                    const cropBox = container.querySelector('.crop-box');
-                    const cropConfirmBtn = container.querySelector('.crop-confirm-btn');
+            // Seleção automática: Abre a caixa de corte cobrindo a imagem inteira
+            document.querySelectorAll('.image-container-wrapper').forEach(container => {
+                const img = container.querySelector('img');
+                const cropBox = container.querySelector('.crop-box');
+                const cropConfirmBtn = container.querySelector('.crop-confirm-btn');
 
-                    if (img && cropBox && cropConfirmBtn) {
-                        const width = img.offsetWidth;
-                        const height = img.offsetHeight;
+                if (img && cropBox && cropConfirmBtn) {
+                    const width = img.offsetWidth;
+                    const height = img.offsetHeight;
 
-                        cropBox.style.left = '0px';
-                        cropBox.style.top = '0px';
-                        cropBox.style.width = `${width}px`;
-                        cropBox.style.height = `${height}px`;
-                        cropBox.classList.add('active');
+                    cropBox.style.left = '0px';
+                    cropBox.style.top = '0px';
+                    cropBox.style.width = `${width}px`;
+                    cropBox.style.height = `${height}px`;
+                    cropBox.classList.add('active');
 
-                        cropConfirmBtn.style.left = `${width + 8}px`;
-                        cropConfirmBtn.style.top = '0px';
-                        cropConfirmBtn.classList.add('active');
-                    }
-                });
-            
+                    cropConfirmBtn.style.left = `${width + 8}px`;
+                    cropConfirmBtn.style.top = '0px';
+                    cropConfirmBtn.classList.add('active');
+                }
+            });
+        } else if (btn.id === 'moveToolBtn') {
+            activeTool = 'move';
+            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
         } else {
             activeTool = null;
             document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
@@ -293,12 +296,12 @@ function makeImageInteractive(img) {
     let initialCropBox = {};
 
     container.addEventListener('mousedown', (e) => {
-        if (activeTool !== 'resize' && activeTool !== 'crop') return;
+        // CORRIGIDO: Agora aceita 'resize', 'crop' e 'move'
+        if (activeTool !== 'resize' && activeTool !== 'crop' && activeTool !== 'move') return;
         if (e.target === cropConfirmBtn || cropConfirmBtn.contains(e.target)) return;
 
         e.stopPropagation();
 
-        // Se a ferramenta ativa for REDIMENSIONAR
         if (activeTool === 'resize') {
             container.classList.add('selected');
             toggleHandles(true);
@@ -316,7 +319,16 @@ function makeImageInteractive(img) {
             startTop = container.offsetTop;
             startWidth = img.offsetWidth;
         } 
-        // Se a ferramenta ativa for CORTE (CROP)
+        else if (activeTool === 'move') {
+            isDragging = true;
+            container.classList.add('selected');
+            toggleHandles(false); // Oculta alças ao apenas mover
+
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = container.offsetLeft;
+            startTop = container.offsetTop;
+        }
         else if (activeTool === 'crop') {
             startX = e.clientX;
             startY = e.clientY;
@@ -331,7 +343,6 @@ function makeImageInteractive(img) {
                     height: parseInt(cropBox.style.height) || 0
                 };
             } else {
-                // Se clicar dentro da caixa de corte ou imagem, permite redesenhar o crop
                 isCropping = true;
                 cropConfirmBtn.classList.remove('active');
 
@@ -354,10 +365,10 @@ function makeImageInteractive(img) {
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
 
-        if (isDragging && activeTool === 'resize') {
+        if (isDragging && (activeTool === 'resize' || activeTool === 'move')) {
             container.style.left = `${startLeft + dx}px`;
             container.style.top = `${startTop + dy}px`;
-        } 
+        }
         else if (isResizing && activeTool === 'resize') {
             if (currentHandle.classList.contains('bottom-right')) {
                 img.style.width = `${Math.max(50, startWidth + dx)}px`;
