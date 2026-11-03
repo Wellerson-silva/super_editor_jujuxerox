@@ -9,120 +9,104 @@
 
     <div class="workspace">
         
-        
-        <!-- Barra Lateral Esquerda -->
-        <aside class="sidebar-left">
-
-            <!-- Container que organiza os botões das ferramentas em coluna -->
-            <div class="sidebar-tools">
-                <!-- Botão de Crop (Cortar) -->
-                <button id="cropBtn" class="tool-btn" title="Cortar Imagem / Documento">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path>
-                        <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path>
-                    </svg>
-                </button>
+        <!-- TOOLBAR FLUTUANTE DE FERRAMENTAS (Aparece ao selecionar imagem) -->
+        <div id="imageToolbar" class="floating-image-toolbar hidden">
+            <!-- Botão de Crop (Cortar) -->
+            <button id="cropBtn" class="tool-btn" title="Cortar Imagem / Documento">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path>
+                    <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path>
+                </svg>
+            </button>
 
             <!-- Botão de Redimensionar (Resize) -->
-                <button id="resizeBtn" class="tool-btn" title="Redimensionar Imagem / Documento">
-                    <!-- Ícone SVG de Redimensionar (Setas diagonais de expansão) -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M15 3h6v6"></path>
-                        <path d="M9 21H3v-6"></path>
-                        <path d="M21 3l-7 7"></path>
-                        <path d="M3 21l7-7"></path>
-                    </svg>
-                </button>
-            
-            <!-- Botão de Mover na barra lateral -->
-                <button class="tool-btn" id="moveToolBtn" title="Ferramenta Mover">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"></path>
-                    </svg>
-                </button>
+            <button id="resizeBtn" class="tool-btn" title="Redimensionar Imagem / Documento">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h6v6"></path>
+                    <path d="M9 21H3v-6"></path>
+                    <path d="M21 3l-7 7"></path>
+                    <path d="M3 21l7-7"></path>
+                </svg>
+            </button>
+        
+            <!-- Botão de Mover -->
+            <button id="moveToolBtn" class="tool-btn" title="Ferramenta Mover">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"></path>
+                </svg>
+            </button>
 
             <!-- Botão de Rotacionar (Rotate) -->
-                <button id="rotateBtn" class="tool-btn" title="Girar Imagem / Documento">
-                    <!-- Ícone SVG de Giro/Rotação -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.5 2v6h-6"></path>
-                        <path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                    </svg>
-                </button>
+            <button id="rotateBtn" class="tool-btn" title="Girar Imagem / Documento">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6"></path>
+                    <path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+            </button>
 
             <!-- Botão de Inverter / Espelhar (Flip) -->
-                <button id="flipBtn" class="tool-btn" title="Inverter / Espelhar Imagem">
-                    <!-- Ícone SVG de Inversão/Espelhamento (Setas opostas) -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M7 16V4m0 0L3 8m4-4l4 4"></path>
-                        <path d="M17 8v12m0 0l4-4m-4 4l-4-4"></path>
-                    </svg>
-                </button>
-            
-            <!-- Botão de Adicionar Texto -->
-                <button id="textBtn" class="tool-btn" title="Adicionar Texto / Anotação">
-                    <!-- Ícone SVG universal da letra "A" com cursor de edição -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                        <line x1="9" y1="20" x2="15" y2="20"></line>
-                        <line x1="12" y1="4" x2="12" y2="20"></line>
-                    </svg>
-                </button>
-
-            <!-- Botão de Pincel / Borracha (Apagar rasuras / Ocultar dados) -->
-                <button id="eraserBtn" class="tool-btn" title="Apagar rasuras / Ocultar dados">
-                    <!-- Ícone SVG de Borracha -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
-                        <path d="M22 21H7"></path>
-                        <path d="m5 11 9 9"></path>
-                    </svg>
-                </button>
-
-            <!-- Botão de Formas Geométricas (Destacar partes do documento) -->
-                <button id="shapesBtn" class="tool-btn" title="Destacar partes (Formas Geométricas)">
-                    <!-- Ícone SVG de Retângulo / Formas -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                </button>
-
-            <!-- Botão de Aperfeiçoar / Melhorar Documento (Estilo CamScanner) -->
-                <button id="enhanceBtn" class="tool-btn" title="Aperfeiçoar Documento (Contraste / Nitidez)">
-                    <!-- Ícone SVG de Máfia/Brilho/Filtro Mágico -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"></path>
-                        <circle cx="12" cy="12" r="4"></circle>
-                    </svg>
-                </button>
-
-            </div>
-
-
-        </aside>
-
-        <!-- Área Central com a folha A4 -->
-    <div class="canvas-container" id="canvasContainer">
-        <div id="zoomWrapper" class="zoom-wrapper">
-            <div class="a4-sheet">
-                <span class="sheet-label">Jujuxerox | A4</span>
-            </div>
-        </div>
-
-        <!-- BOTÃO DE ADICIONAR NOVA PÁGINA (Agora dentro do canvas-container) -->
-        <div class="add-page-container">
-            <button id="addPageBtn" class="add-page-btn" title="Adicionar nova página A4">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
+            <button id="flipBtn" class="tool-btn" title="Inverter / Espelhar Imagem">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 16V4m0 0L3 8m4-4l4 4"></path>
+                    <path d="M17 8v12m0 0l4-4m-4 4l-4-4"></path>
                 </svg>
-                <span>Adicionar Página</span>
+            </button>
+        
+            <!-- Botão de Adicionar Texto -->
+            <button id="textBtn" class="tool-btn" title="Adicionar Texto / Anotação">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                    <line x1="9" y1="20" x2="15" y2="20"></line>
+                    <line x1="12" y1="4" x2="12" y2="20"></line>
+                </svg>
+            </button>
+
+            <!-- Botão de Borracha -->
+            <button id="eraserBtn" class="tool-btn" title="Apagar rasuras / Ocultar dados">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+                    <path d="M22 21H7"></path>
+                    <path d="m5 11 9 9"></path>
+                </svg>
+            </button>
+
+            <!-- Botão de Formas Geométricas -->
+            <button id="shapesBtn" class="tool-btn" title="Destacar partes (Formas Geométricas)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+            </button>
+
+            <!-- Botão de Aperfeiçoar -->
+            <button id="enhanceBtn" class="tool-btn" title="Aperfeiçoar Documento (Contraste / Nitidez)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"></path>
+                    <circle cx="12" cy="12" r="4"></circle>
+                </svg>
             </button>
         </div>
-    </div>
-        
+
+        <!-- Área Central com a folha A4 -->
+        <div class="canvas-container" id="canvasContainer">
+            <div id="zoomWrapper" class="zoom-wrapper">
+                <div class="a4-sheet">
+                    <span class="sheet-label">Jujuxerox | A4</span>
+                </div>
+            </div>
+
+            <!-- BOTÃO DE ADICIONAR NOVA PÁGINA -->
+            <div class="add-page-container">
+                <button id="addPageBtn" class="add-page-btn" title="Adicionar nova página A4">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Adicionar Página</span>
+                </button>
+            </div>
+        </div>
 
         <!-- Indicador de Zoom -->
         <div class="zoom-indicator" id="zoomIndicator">Zoom: 100%</div>
@@ -142,9 +126,6 @@
         </label>
         <input type="file" id="fileUploadInput" style="display: none;" />
     </div>
-
-    
-        </div>
 
     <script src="{{ url_for('static', filename='javascript.js') }}"></script>
 </body>

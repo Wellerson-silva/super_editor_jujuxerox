@@ -13,6 +13,7 @@ const addPageBtn = document.getElementById('addPageBtn');
 const resizeBtn = document.getElementById('resizeBtn');
 const cropBtn = document.getElementById('cropBtn');
 const toolBtns = document.querySelectorAll('.tool-btn');
+const imageToolbar = document.getElementById('imageToolbar'); // Nova Toolbar Flutuante
 
 // ==================================================
 //                 VARIÁVEIS GLOBAIS
@@ -24,25 +25,49 @@ let sheetY = 0; // Posição Y atual da folha
 let activeTool = null;   // Estado da ferramenta ativa atual
 
 // ======================================================
+//             FUNÇÕES AUXILIARES DE TOOLBAR
+// ======================================================
+
+function showImageToolbar() {
+    if (imageToolbar) {
+        imageToolbar.classList.remove('hidden');
+    }
+}
+
+function hideImageToolbar() {
+    if (imageToolbar) {
+        imageToolbar.classList.add('hidden');
+    }
+}
+
+// ======================================================
 //                  CONTROLE DOS BOTÕES
 // ======================================================
 
 toolBtns.forEach(btn => {
     btn.addEventListener('click', () => {
+
+        document.querySelectorAll('.image-container-wrapper').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.resize-handle').forEach(h => h.classList.remove('active'));
+
         // Se clicar no botão que já estava ativo, desativa ele
         if (btn.classList.contains('active-tool')) {
             btn.classList.remove('active-tool');
             activeTool = null;
             
-            // Limpa caixas de corte ativas
+            // Limpa caixas de corte e rotação ativas
             document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.image-container-wrapper').forEach(c => c.classList.remove('rotate-active'));
             return;
         }
 
         // Remove o destaque de todos os botões e destaca apenas o clicado
         toolBtns.forEach(b => b.classList.remove('active-tool'));
         btn.classList.add('active-tool');
+
+        // Garante a remoção inicial da classe rotate-active antes de definir a ferramenta
+        document.querySelectorAll('.image-container-wrapper').forEach(c => c.classList.remove('rotate-active'));
 
         // Define a ferramenta ativa baseada no ID do botão
         if (btn.id === 'resizeBtn') {
@@ -51,7 +76,6 @@ toolBtns.forEach(btn => {
             document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
         } else if (btn.id === 'cropBtn') {
             activeTool = 'crop';
-            // Seleção automática: Abre a caixa de corte cobrindo a imagem inteira
             document.querySelectorAll('.image-container-wrapper').forEach(container => {
                 const img = container.querySelector('img');
                 const cropBox = container.querySelector('.crop-box');
@@ -76,6 +100,15 @@ toolBtns.forEach(btn => {
             activeTool = 'move';
             document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
+        } else if (btn.id === 'rotateBtn') {
+            activeTool = 'rotate';
+            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
+
+            // Ativa o modo visual da alça de rotação apenas quando o botão de rotação estiver ativo!
+            document.querySelectorAll('.image-container-wrapper').forEach(container => {
+                container.classList.add('rotate-active');
+            });
         } else {
             activeTool = null;
             document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
@@ -84,8 +117,9 @@ toolBtns.forEach(btn => {
     });
 });
 
+
 // ======================================================
-//               CONTROLES DE ZOOM NA TELA
+//                CONTROLES DE ZOOM NA TELA
 // ======================================================
 
 if (canvasContainer) {
@@ -213,6 +247,7 @@ function addDeleteButtonToSheet(sheet) {
         
         if (totalSheets > 1) {
             sheet.remove();
+            hideImageToolbar();
         } else {
             alert("Você não pode excluir a única página restante!");
         }
@@ -268,6 +303,36 @@ function makeImageInteractive(img) {
         });
     }
 
+    // Criação da alça visual de rotação no topo
+    const rotContainer = document.createElement('div');
+    rotContainer.className = 'rotation-handle-container';
+    
+    const rotLine = document.createElement('div');
+    rotLine.className = 'rotation-line';
+    
+    const rotHandle = document.createElement('div');
+    rotHandle.className = 'rotation-handle';
+    rotHandle.title = 'Arraste para rotacionar';
+
+    const rotTooltip = document.createElement('div');
+    rotTooltip.className = 'rotation-tooltip';
+    rotTooltip.innerText = '0°';
+
+    rotContainer.appendChild(rotTooltip);
+    rotContainer.appendChild(rotLine);
+    rotContainer.appendChild(rotHandle);
+    container.appendChild(rotContainer);
+
+    let isRotating = false;
+
+    rotHandle.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        isRotating = true;
+        startX = e.clientX;
+        activeTool = 'rotate';
+        showImageToolbar();
+    });
+
     // Caixa de Corte, Alças laterais e Botão de Confirmação
     const cropBox = document.createElement('div');
     cropBox.className = 'crop-box';
@@ -295,9 +360,16 @@ function makeImageInteractive(img) {
     let cropStartX = 0, cropStartY = 0;
     let initialCropBox = {};
 
+    // Ao clicar na imagem, exibe a toolbar flutuante no topo!
+    container.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showImageToolbar();
+    });
+
     container.addEventListener('mousedown', (e) => {
-        // CORRIGIDO: Agora aceita 'resize', 'crop' e 'move'
-        if (activeTool !== 'resize' && activeTool !== 'crop' && activeTool !== 'move') return;
+        showImageToolbar();
+
+        if (activeTool !== 'resize' && activeTool !== 'crop' && activeTool !== 'move' && activeTool !== 'rotate') return;
         if (e.target === cropConfirmBtn || cropConfirmBtn.contains(e.target)) return;
 
         e.stopPropagation();
@@ -356,11 +428,15 @@ function makeImageInteractive(img) {
                 cropBox.style.height = '0px';
                 cropBox.classList.add('active');
             }
+        }   
+        else if (activeTool === 'rotate') {
+            isRotating = true;
+            startX = e.clientX;
         }
     });
 
     window.addEventListener('mousemove', (e) => {
-        if (!isDragging && !isResizing && !isCropping && !isAdjustingCrop) return;
+        if (!isDragging && !isResizing && !isCropping && !isAdjustingCrop && !isRotating) return;
 
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
@@ -370,20 +446,21 @@ function makeImageInteractive(img) {
             container.style.top = `${startTop + dy}px`;
         }
         else if (isResizing && activeTool === 'resize') {
-            if (currentHandle.classList.contains('bottom-right')) {
-                img.style.width = `${Math.max(50, startWidth + dx)}px`;
-            } else if (currentHandle.classList.contains('bottom-left')) {
-                img.style.width = `${Math.max(50, startWidth - dx)}px`;
-                container.style.left = `${startLeft + dx}px`;
-            } else if (currentHandle.classList.contains('top-right')) {
-                img.style.width = `${Math.max(50, startWidth + dx)}px`;
-                container.style.top = `${startTop + dy}px`;
-            } else if (currentHandle.classList.contains('top-left')) {
-                img.style.width = `${Math.max(50, startWidth - dx)}px`;
-                container.style.left = `${startLeft + dx}px`;
-                container.style.top = `${startTop + dy}px`;
+            let newWidth = startWidth;
+            if (currentHandle.classList.contains('bottom-right') || currentHandle.classList.contains('top-right')) {
+                newWidth = Math.max(50, startWidth + dx);
+            } else {
+                newWidth = Math.max(50, startWidth - dx);
+                container.style.left = `${startLeft + (startWidth - newWidth)}px`;
             }
-        } 
+
+            if (currentHandle.classList.contains('top-left') || currentHandle.classList.contains('top-right')) {
+                container.style.top = `${startTop + (img.offsetHeight - (img.naturalHeight * (newWidth / img.naturalHeight)))}px`;
+            }
+
+            img.style.width = `${newWidth}px`;
+            img.style.height = 'auto';
+        }
         else if (isCropping && activeTool === 'crop') {
             const rect = container.getBoundingClientRect();
             const currentX = e.clientX - rect.left;
@@ -423,6 +500,20 @@ function makeImageInteractive(img) {
                 }
             }
         }
+        else if (isRotating && activeTool === 'rotate') {
+            const dx = e.clientX - startX;
+            let currentRotation = parseFloat(container.dataset.rotation || '0');
+            let newRotation = (currentRotation + dx * 0.5) % 360;
+            if (newRotation < 0) newRotation += 360;
+            
+            container.dataset.rotation = newRotation;
+            container.style.transform = `rotate(${newRotation}deg)`;
+            
+            rotTooltip.innerText = `${Math.round(newRotation)}°`;
+            rotTooltip.classList.add('active');
+
+            startX = e.clientX;
+        }
     });
 
     window.addEventListener('mouseup', () => {
@@ -444,8 +535,13 @@ function makeImageInteractive(img) {
             }
         }
 
+        if (rotTooltip) {
+            rotTooltip.classList.remove('active');
+        }
+
         isDragging = false;
         isResizing = false;
+        isRotating = false;
         currentHandle = null;
     });
 
@@ -487,3 +583,15 @@ function makeImageInteractive(img) {
         toolBtns.forEach(b => b.classList.remove('active-tool'));
     });
 }
+
+// Deseleciona a imagem e esconde a toolbar flutuante ao clicar fora da imagem e fora do menu
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.image-container-wrapper') && !e.target.closest('#imageToolbar')) {
+        document.querySelectorAll('.image-container-wrapper').forEach(c => {
+            c.classList.remove('selected');
+            c.classList.remove('rotate-active');
+            c.querySelectorAll('.resize-handle').forEach(h => h.classList.remove('active'));
+        });
+        hideImageToolbar();
+    }
+});
