@@ -100,15 +100,18 @@ toolBtns.forEach(btn => {
             activeTool = 'move';
             document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
-        } else if (btn.id === 'rotateBtn') {
+
+        }  else if (btn.id === 'rotateBtn') {
             activeTool = 'rotate';
             document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
 
-            // Ativa o modo visual da alça de rotação apenas quando o botão de rotação estiver ativo!
+            // Ativa o modo visual de rotação e seleciona todas as imagens para garantir que a alça apareça
             document.querySelectorAll('.image-container-wrapper').forEach(container => {
+                container.classList.add('selected');
                 container.classList.add('rotate-active');
             });
+        
         } else {
             activeTool = null;
             document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
@@ -364,6 +367,11 @@ function makeImageInteractive(img) {
     container.addEventListener('click', (e) => {
         e.stopPropagation();
         showImageToolbar();
+
+        // Se a ferramenta de rotação estiver ativa, garante que a alça aparece ao clicar na imagem
+        if (activeTool === 'rotate') {
+            container.classList.add('rotate-active');
+        }
     });
 
     container.addEventListener('mousedown', (e) => {
@@ -442,8 +450,29 @@ function makeImageInteractive(img) {
         const dy = e.clientY - startY;
 
         if (isDragging && (activeTool === 'resize' || activeTool === 'move')) {
-            container.style.left = `${startLeft + dx}px`;
-            container.style.top = `${startTop + dy}px`;
+            let newLeft = startLeft + dx;
+            let newTop = startTop + dy;
+
+            // Obtém os limites da folha A4 pai atual
+            const sheet = container.parentNode;
+            const sheetWidth = sheet.clientWidth;
+            const sheetHeight = sheet.clientHeight;
+            
+            // Dimensões atuais do container da imagem
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            // Aplica os limites para que a imagem não saia da folha A4
+            const minLeft = 0;
+            const maxLeft = sheetWidth - containerWidth;
+            const minTop = 0;
+            const maxTop = sheetHeight - containerHeight;
+
+            newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
+            newTop = Math.max(minTop, Math.min(newTop, maxTop));
+
+            container.style.left = `${newLeft}px`;
+            container.style.top = `${newTop}px`;
         }
         else if (isResizing && activeTool === 'resize') {
             let newWidth = startWidth;
