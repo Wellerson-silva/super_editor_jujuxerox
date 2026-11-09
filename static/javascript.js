@@ -13,6 +13,7 @@ const addPageBtn = document.getElementById('addPageBtn');
 const resizeBtn = document.getElementById('resizeBtn');
 const cropBtn = document.getElementById('cropBtn');
 const toolBtns = document.querySelectorAll('.tool-btn');
+const flipBtn = document.getElementById('flipBtn');
 const imageToolbar = document.getElementById('imageToolbar'); // Nova Toolbar Flutuante
 
 // ==================================================
@@ -471,8 +472,8 @@ function makeImageInteractive(img) {
             newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
             newTop = Math.max(minTop, Math.min(newTop, maxTop));
 
-            container.style.left = `${newLeft}px`;
-            container.style.top = `${newTop}px`;
+            container.style.left = `${startLeft + dx}px`;
+            container.style.top = `${startTop + dy}px`;
         }
         else if (isResizing && activeTool === 'resize') {
             let newWidth = startWidth;
@@ -546,6 +547,59 @@ function makeImageInteractive(img) {
     });
 
     window.addEventListener('mouseup', () => {
+        if (isDragging && (activeTool === 'resize' || activeTool === 'move')) {
+            const containerRect = container.getBoundingClientRect();
+            const containerCenterX = containerRect.left + containerRect.width / 2;
+            const containerCenterY = containerRect.top + containerRect.height / 2;
+
+            const oldSheet = container.parentNode;
+            const sheets = zoomWrapper.querySelectorAll('.a4-sheet');
+            
+            let droppedInsideSheet = false;
+
+            sheets.forEach(sheet => {
+                const sheetRect = sheet.getBoundingClientRect();
+                
+                if (
+                    containerCenterX >= sheetRect.left &&
+                    containerCenterX <= sheetRect.right &&
+                    containerCenterY >= sheetRect.top &&
+                    containerCenterY <= sheetRect.bottom
+                ) {
+                    droppedInsideSheet = true;
+                    const currentLeft = container.offsetLeft;
+                    const currentTop = container.offsetTop;
+                    
+                    if (oldSheet !== sheet) {
+                        sheet.appendChild(container);
+                        
+                        container.style.left = `${Math.max(10, currentLeft)}px`;
+                        container.style.top = `${Math.max(10, currentTop)}px`;
+
+                        const remainingImages = oldSheet.querySelectorAll('.image-container-wrapper');
+                        const totalSheets = zoomWrapper.querySelectorAll('.a4-sheet').length;
+
+                        if (remainingImages.length === 0 && totalSheets > 1) {
+                            oldSheet.remove();
+                            hideImageToolbar();
+                        }
+                    }
+                }
+            });
+
+            if (!droppedInsideSheet) {
+                if (oldSheet && document.body.contains(oldSheet)) {
+                    oldSheet.appendChild(container);
+                } else {
+                    const firstSheet = zoomWrapper.querySelector('.a4-sheet');
+                    if (firstSheet) firstSheet.appendChild(container);
+                }
+                
+                container.style.left = '20px';
+                container.style.top = '20px';
+            }
+        }
+
         if (isCropping || isAdjustingCrop) {
             isCropping = false;
             isAdjustingCrop = false;
@@ -611,16 +665,28 @@ function makeImageInteractive(img) {
         activeTool = null;
         toolBtns.forEach(b => b.classList.remove('active-tool'));
     });
-}
 
-// Deseleciona a imagem e esconde a toolbar flutuante ao clicar fora da imagem e fora do menu
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.image-container-wrapper') && !e.target.closest('#imageToolbar')) {
-        document.querySelectorAll('.image-container-wrapper').forEach(c => {
-            c.classList.remove('selected');
-            c.classList.remove('rotate-active');
-            c.querySelectorAll('.resize-handle').forEach(h => h.classList.remove('active'));
+    // ==========================================
+    // LÓGICA DO BOTÃO ESPELHAR (FLIP)
+    // ==========================================
+    const flipBtn = document.getElementById('flipBtn');
+    if (flipBtn) {
+        // Remove event listener anterior para evitar duplicações ao carregar novas imagens
+        const newFlipBtn = flipBtn.cloneNode(true);
+        flipBtn.parentNode.replaceChild(newFlipBtn, flipBtn);
+
+        newFlipBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // Verifica se este container específico é o que está selecionado
+            if (container.classList.contains('selected')) {
+                let currentFlip = parseFloat(img.dataset.flipH || '1');
+                let newFlip = currentFlip === 1 ? -1 : 1;
+                
+                img.dataset.flipH = newFlip;
+                img.style.transform = `scaleX(${newFlip})`;
+            }
         });
-        hideImageToolbar();
     }
-});
+
+} // <--- FIM DA FUNÇÃO makeImageInteractive(img)
