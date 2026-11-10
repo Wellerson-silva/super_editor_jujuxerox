@@ -14,19 +14,20 @@ const resizeBtn = document.getElementById('resizeBtn');
 const cropBtn = document.getElementById('cropBtn');
 const toolBtns = document.querySelectorAll('.tool-btn');
 const flipBtn = document.getElementById('flipBtn');
-const imageToolbar = document.getElementById('imageToolbar'); // Nova Toolbar Flutuante
+const imageToolbar = document.getElementById('imageToolbar'); // Toolbar Flutuante
 
 // ==================================================
 //                 VARIÁVEIS GLOBAIS
 // ==================================================
 
 let currentZoom = 0.4;
-let sheetX = 0; // Posição X atual da folha
-let sheetY = 0; // Posição Y atual da folha
-let activeTool = null;   // Estado da ferramenta ativa atual
+let sheetX = 0;
+let sheetY = 0;
+let activeTool = null;
+let globalZIndexCounter = 10;
 
 // ======================================================
-//             FUNÇÕES AUXILIARES DE TOOLBAR
+//            FUNÇÕES AUXILIARES DE TOOLBAR E SELEÇÃO
 // ======================================================
 
 function showImageToolbar() {
@@ -41,86 +42,130 @@ function hideImageToolbar() {
     }
 }
 
+function deselectAllImages() {
+    document.querySelectorAll('.image-container-wrapper').forEach(c => {
+        c.classList.remove('selected', 'rotate-active');
+        const handles = c.querySelectorAll('.resize-handle');
+        handles.forEach(h => h.classList.remove('active'));
+        
+        const cropBox = c.querySelector('.crop-box');
+        const cropConfirmBtn = c.querySelector('.crop-confirm-btn');
+        if (cropBox) cropBox.classList.remove('active');
+        if (cropConfirmBtn) cropConfirmBtn.classList.remove('active');
+    });
+}
+
+function selectImage(container) {
+    deselectAllImages();
+    container.classList.add('selected');
+    
+    // Traz a imagem clicada para a camada mais alta
+    globalZIndexCounter++;
+    container.style.zIndex = globalZIndexCounter;
+    
+    showImageToolbar();
+}
+
+// Clicar no fundo (fora de qualquer imagem) limpa a seleção
+if (canvasContainer) {
+    canvasContainer.addEventListener('click', (e) => {
+        if (e.target === canvasContainer || e.target === zoomWrapper || e.target.classList.contains('a4-sheet')) {
+            deselectAllImages();
+            toolBtns.forEach(b => b.classList.remove('active-tool'));
+            activeTool = null;
+            hideImageToolbar();
+        }
+    });
+}
+
 // ======================================================
-//                  CONTROLE DOS BOTÕES
+//        CONTROLE DOS BOTÕES (AÇÃO NA IMAGEM SELECIONADA)
 // ======================================================
 
 toolBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
 
-        document.querySelectorAll('.image-container-wrapper').forEach(c => c.classList.remove('selected'));
-        document.querySelectorAll('.resize-handle').forEach(h => h.classList.remove('active'));
+        const selectedContainer = document.querySelector('.image-container-wrapper.selected');
+        
+        if (!selectedContainer) {
+            alert("Por favor, clique primeiro numa imagem para selecioná-la!");
+            return;
+        }
 
-        // Se clicar no botão que já estava ativo, desativa ele
         if (btn.classList.contains('active-tool')) {
             btn.classList.remove('active-tool');
             activeTool = null;
             
-            // Limpa caixas de corte e rotação ativas
-            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.image-container-wrapper').forEach(c => c.classList.remove('rotate-active'));
+            selectedContainer.classList.remove('rotate-active', 'tool-move', 'tool-resize', 'tool-crop', 'tool-rotate');
+            const handles = selectedContainer.querySelectorAll('.resize-handle');
+            handles.forEach(h => h.classList.remove('active'));
+            
+            const cropBox = selectedContainer.querySelector('.crop-box');
+            const cropConfirmBtn = selectedContainer.querySelector('.crop-confirm-btn');
+            if (cropBox) cropBox.classList.remove('active');
+            if (cropConfirmBtn) cropConfirmBtn.classList.remove('active');
             return;
         }
 
-        // Remove o destaque de todos os botões e destaca apenas o clicado
         toolBtns.forEach(b => b.classList.remove('active-tool'));
         btn.classList.add('active-tool');
 
-        // Garante a remoção inicial da classe rotate-active antes de definir a ferramenta
-        document.querySelectorAll('.image-container-wrapper').forEach(c => c.classList.remove('rotate-active'));
+        // Reseta estados visuais anteriores
+        selectedContainer.classList.remove('rotate-active', 'tool-move', 'tool-resize', 'tool-crop', 'tool-rotate');
+        const handles = selectedContainer.querySelectorAll('.resize-handle');
+        handles.forEach(h => h.classList.remove('active'));
+        
+        const cropBox = selectedContainer.querySelector('.crop-box');
+        const cropConfirmBtn = selectedContainer.querySelector('.crop-confirm-btn');
+        if (cropBox) cropBox.classList.remove('active');
+        if (cropConfirmBtn) cropConfirmBtn.classList.remove('active');
 
-        // Define a ferramenta ativa baseada no ID do botão
+        // Ativa a ferramenta e a classe de cursor correspondente
         if (btn.id === 'resizeBtn') {
             activeTool = 'resize';
-            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
-        } else if (btn.id === 'cropBtn') {
+            selectedContainer.classList.add('tool-resize');
+            handles.forEach(h => h.classList.add('active'));
+        } 
+        else if (btn.id === 'cropBtn') {
             activeTool = 'crop';
-            document.querySelectorAll('.image-container-wrapper').forEach(container => {
-                const img = container.querySelector('img');
-                const cropBox = container.querySelector('.crop-box');
-                const cropConfirmBtn = container.querySelector('.crop-confirm-btn');
+            selectedContainer.classList.add('tool-crop');
+            const img = selectedContainer.querySelector('img');
 
-                if (img && cropBox && cropConfirmBtn) {
-                    const width = img.offsetWidth;
-                    const height = img.offsetHeight;
+            if (img && cropBox && cropConfirmBtn) {
+                const width = img.offsetWidth;
+                const height = img.offsetHeight;
 
-                    cropBox.style.left = '0px';
-                    cropBox.style.top = '0px';
-                    cropBox.style.width = `${width}px`;
-                    cropBox.style.height = `${height}px`;
-                    cropBox.classList.add('active');
+                cropBox.style.left = '0px';
+                cropBox.style.top = '0px';
+                cropBox.style.width = `${width}px`;
+                cropBox.style.height = `${height}px`;
+                cropBox.classList.add('active');
 
-                    cropConfirmBtn.style.left = `${width + 8}px`;
-                    cropConfirmBtn.style.top = '0px';
-                    cropConfirmBtn.classList.add('active');
-                }
-            });
-        } else if (btn.id === 'moveToolBtn') {
+                cropConfirmBtn.style.left = `${width + 8}px`;
+                cropConfirmBtn.style.top = '0px';
+                cropConfirmBtn.classList.add('active');
+            }
+        } 
+        else if (btn.id === 'moveToolBtn') {
             activeTool = 'move';
-            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
-
-        }  else if (btn.id === 'rotateBtn') {
+            selectedContainer.classList.add('tool-move');
+        }  
+        else if (btn.id === 'rotateBtn') {
             activeTool = 'rotate';
-            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
-
-            // Ativa o modo visual de rotação e seleciona todas as imagens para garantir que a alça apareça
-            document.querySelectorAll('.image-container-wrapper').forEach(container => {
-                container.classList.add('selected');
-                container.classList.add('rotate-active');
-            });
-        
-        } else {
-            activeTool = null;
-            document.querySelectorAll('.crop-box').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.crop-confirm-btn').forEach(b => b.classList.remove('active'));
+            selectedContainer.classList.add('rotate-active', 'tool-rotate');
+        } 
+        else if (btn.id === 'flipBtn') {
+            const img = selectedContainer.querySelector('img');
+            if (img) {
+                let currentFlip = parseFloat(img.dataset.flipH || '1');
+                let newFlip = currentFlip === 1 ? -1 : 1;
+                img.dataset.flipH = newFlip;
+                img.style.transform = `scaleX(${newFlip})`;
+            }
         }
     });
 });
-
 
 // ======================================================
 //                CONTROLES DE ZOOM NA TELA
@@ -149,6 +194,7 @@ if (canvasContainer) {
 // ==========================================
 //          LÓGICA DE UPLOAD DE ARQUIVO
 // ==========================================
+
 if (fileUploadInput) {
     fileUploadInput.setAttribute('multiple', 'true');
 
@@ -222,6 +268,7 @@ if (addPageBtn) {
 // ==========================================
 //       LÓGICA DE DOWNLOAD / EXPORTAÇÃO
 // ==========================================
+
 if (downloadButton) {
     downloadButton.addEventListener('click', () => {
         alert("Funcionalidade de download em desenvolvimento!");
@@ -266,7 +313,7 @@ if (initialSheet) {
 }
 
 // ===========================================
-//       GERENCIADOR INTERATIVO DA IMAGEM
+//      GERENCIADOR INTERATIVO DA IMAGEM
 // ===========================================
 
 function makeImageInteractive(img) {
@@ -283,8 +330,8 @@ function makeImageInteractive(img) {
     img.style.width = '200px';
     img.style.height = 'auto';
     img.style.display = 'block';
-    img.style.cursor = 'move';
-    img.draggable = false; // Desativa o arraste nativo do navegador
+    //img.style.cursor = 'move';
+    img.draggable = false;
 
     // Alças de redimensionamento da imagem
     const handles = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
@@ -297,17 +344,7 @@ function makeImageInteractive(img) {
         handleElements[pos] = handle;
     });
 
-    function toggleHandles(show) {
-        handles.forEach(pos => {
-            if (show) {
-                handleElements[pos].classList.add('active');
-            } else {
-                handleElements[pos].classList.remove('active');
-            }
-        });
-    }
-
-    // Criação da alça visual de rotação no topo
+    // Alça visual de rotação
     const rotContainer = document.createElement('div');
     rotContainer.className = 'rotation-handle-container';
     
@@ -334,10 +371,10 @@ function makeImageInteractive(img) {
         isRotating = true;
         startX = e.clientX;
         activeTool = 'rotate';
-        showImageToolbar();
+        selectImage(container);
     });
 
-    // Caixa de Corte, Alças laterais e Botão de Confirmação
+    // Caixa de Corte e Botão de Confirmação
     const cropBox = document.createElement('div');
     cropBox.className = 'crop-box';
     container.appendChild(cropBox);
@@ -364,29 +401,20 @@ function makeImageInteractive(img) {
     let cropStartX = 0, cropStartY = 0;
     let initialCropBox = {};
 
-    // Ao clicar na imagem, exibe a toolbar flutuante no topo!
+    // Clicar na imagem ativa a seleção e abre a toolbar
     container.addEventListener('click', (e) => {
         e.stopPropagation();
-        showImageToolbar();
-
-        // Se a ferramenta de rotação estiver ativa, garante que a alça aparece ao clicar na imagem
-        if (activeTool === 'rotate') {
-            container.classList.add('rotate-active');
-        }
+        selectImage(container);
     });
 
     container.addEventListener('mousedown', (e) => {
-        showImageToolbar();
+        selectImage(container);
 
-        if (activeTool !== 'resize' && activeTool !== 'crop' && activeTool !== 'move' && activeTool !== 'rotate') return;
         if (e.target === cropConfirmBtn || cropConfirmBtn.contains(e.target)) return;
 
         e.stopPropagation();
 
-        if (activeTool === 'resize') {
-            container.classList.add('selected');
-            toggleHandles(true);
-
+        if (activeTool === 'resize' || e.target.classList.contains('resize-handle')) {
             if (e.target.classList.contains('resize-handle')) {
                 isResizing = true;
                 currentHandle = e.target;
@@ -400,16 +428,6 @@ function makeImageInteractive(img) {
             startTop = container.offsetTop;
             startWidth = img.offsetWidth;
         } 
-        else if (activeTool === 'move') {
-            isDragging = true;
-            container.classList.add('selected');
-            toggleHandles(false); // Oculta alças ao apenas mover
-
-            startX = e.clientX;
-            startY = e.clientY;
-            startLeft = container.offsetLeft;
-            startTop = container.offsetTop;
-        }
         else if (activeTool === 'crop') {
             startX = e.clientX;
             startY = e.clientY;
@@ -437,10 +455,18 @@ function makeImageInteractive(img) {
                 cropBox.style.height = '0px';
                 cropBox.classList.add('active');
             }
-        }   
+        } 
         else if (activeTool === 'rotate') {
             isRotating = true;
             startX = e.clientX;
+        }
+        else {
+            // Ferramenta padrao: mover
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = container.offsetLeft;
+            startTop = container.offsetTop;
         }
     });
 
@@ -450,28 +476,7 @@ function makeImageInteractive(img) {
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
 
-        if (isDragging && (activeTool === 'resize' || activeTool === 'move')) {
-            let newLeft = startLeft + dx;
-            let newTop = startTop + dy;
-
-            // Obtém os limites da folha A4 pai atual
-            const sheet = container.parentNode;
-            const sheetWidth = sheet.clientWidth;
-            const sheetHeight = sheet.clientHeight;
-            
-            // Dimensões atuais do container da imagem
-            const containerWidth = container.offsetWidth;
-            const containerHeight = container.offsetHeight;
-
-            // Aplica os limites para que a imagem não saia da folha A4
-            const minLeft = 0;
-            const maxLeft = sheetWidth - containerWidth;
-            const minTop = 0;
-            const maxTop = sheetHeight - containerHeight;
-
-            newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
-            newTop = Math.max(minTop, Math.min(newTop, maxTop));
-
+        if (isDragging) {
             container.style.left = `${startLeft + dx}px`;
             container.style.top = `${startTop + dy}px`;
         }
@@ -539,6 +544,7 @@ function makeImageInteractive(img) {
             container.dataset.rotation = newRotation;
             container.style.transform = `rotate(${newRotation}deg)`;
             
+            // Restaura o tooltip de rotação visível com o ângulo exato
             rotTooltip.innerText = `${Math.round(newRotation)}°`;
             rotTooltip.classList.add('active');
 
@@ -547,7 +553,7 @@ function makeImageInteractive(img) {
     });
 
     window.addEventListener('mouseup', () => {
-        if (isDragging && (activeTool === 'resize' || activeTool === 'move')) {
+        if (isDragging) {
             const containerRect = container.getBoundingClientRect();
             const containerCenterX = containerRect.left + containerRect.width / 2;
             const containerCenterY = containerRect.top + containerRect.height / 2;
@@ -665,28 +671,4 @@ function makeImageInteractive(img) {
         activeTool = null;
         toolBtns.forEach(b => b.classList.remove('active-tool'));
     });
-
-    // ==========================================
-    // LÓGICA DO BOTÃO ESPELHAR (FLIP)
-    // ==========================================
-    const flipBtn = document.getElementById('flipBtn');
-    if (flipBtn) {
-        // Remove event listener anterior para evitar duplicações ao carregar novas imagens
-        const newFlipBtn = flipBtn.cloneNode(true);
-        flipBtn.parentNode.replaceChild(newFlipBtn, flipBtn);
-
-        newFlipBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // Verifica se este container específico é o que está selecionado
-            if (container.classList.contains('selected')) {
-                let currentFlip = parseFloat(img.dataset.flipH || '1');
-                let newFlip = currentFlip === 1 ? -1 : 1;
-                
-                img.dataset.flipH = newFlip;
-                img.style.transform = `scaleX(${newFlip})`;
-            }
-        });
-    }
-
-} // <--- FIM DA FUNÇÃO makeImageInteractive(img)
+}

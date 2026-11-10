@@ -465,3 +465,31 @@ body {
 .rotation-tooltip.active {
     display: block;
 }
+
+/* ============================== */
+/*      SELECIONAR IMAGEM         */
+/* ============================== */
+
+/* Estilo visual para quando a imagem estiver selecionada */
+.image-container-wrapper.selected {
+    outline: 2px dashed #9333ea;
+    outline-offset: 4px;
+}
+
+/* ==================================== */
+/*         ALTERAÇÕES DE CURSOR         */
+/* ==================================== */
+
+/* Cursores dinâmicos por ferramenta */
+.image-container-wrapper.tool-move img {
+    cursor: move;
+}
+.image-container-wrapper.tool-resize img {
+    cursor: nwse-resize;
+}
+.image-container-wrapper.tool-crop img {
+    cursor: crosshair;
+}
+.image-container-wrapper.tool-rotate img {
+    cursor: grab;
+}
